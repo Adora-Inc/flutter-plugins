@@ -1,7 +1,7 @@
 import Flutter
 import UIKit
 
-public class SwiftScreenStatePlugin: NSObject, FlutterPlugin {
+public class ScreenStatePlugin: NSObject, FlutterPlugin {
   public static func register(with registrar: FlutterPluginRegistrar) {
     let screenStateDetector = ScreenStateDetector()
     let channel = FlutterEventChannel.init(name: "screenStateEvents", binaryMessenger: registrar.messenger())
