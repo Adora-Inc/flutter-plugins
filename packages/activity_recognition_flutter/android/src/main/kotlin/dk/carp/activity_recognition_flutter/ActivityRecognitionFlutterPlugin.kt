@@ -33,6 +33,9 @@ class ActivityRecognitionFlutterPlugin :
 
         /** How often the system is asked for a new detection. */
         const val DETECTION_INTERVAL_MS = 5_000L
+
+        /** Engines currently tracking. They share one PendingIntent, so only the last one may remove it. */
+        var trackingEngines = 0
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -42,6 +45,7 @@ class ActivityRecognitionFlutterPlugin :
     private var preferences: SharedPreferences? = null
     private var eventSink: PigeonEventSink<PlatformActivity>? = null
     private var runForegroundService = false
+    private var isTracking = false
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         val context = binding.applicationContext
@@ -75,6 +79,9 @@ class ActivityRecognitionFlutterPlugin :
 
     private fun startTracking() {
         val context = applicationContext ?: return
+        if (isTracking) return
+        isTracking = true
+        trackingEngines++
 
         if (runForegroundService) {
             context.startForegroundService(Intent(context, ForegroundService::class.java))
@@ -88,6 +95,11 @@ class ActivityRecognitionFlutterPlugin :
 
     private fun stopTracking() {
         val context = applicationContext ?: return
+        // Every engine detaches through here, including ones that never listened.
+        if (!isTracking) return
+        isTracking = false
+        trackingEngines--
+        if (trackingEngines > 0) return
 
         ActivityRecognition.getClient(context).removeActivityUpdates(detectionIntent(context))
 
